@@ -6,6 +6,6 @@ langchain-openai>=0.3.32,
 langchain-pinecone>=0.2.12,
 openai>=1.104.2,
 pinecone>=7.3.0,
-psycopg2>=2.9.10,
+psycopg2-binary==2.9.10
 sentence-transformers>=5.1.0,
 streamlit>=1.49.1
