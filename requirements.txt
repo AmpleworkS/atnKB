@@ -1,0 +1,12 @@
+python-version
+dotenv
+langchain
+langchain-community
+langchain-openai
+langchain-pinecone
+openai
+pinecone
+psycopg2
+sentence-transformers
+streamlit
+langchain-core
