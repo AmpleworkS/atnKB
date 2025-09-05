@@ -1,0 +1,105 @@
+/* General */
+body {
+  margin: 0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: #f9fafb;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.chat-container {
+  width: 100%;
+  max-width: 900px;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+/* Chat window */
+.chat-window {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: #f8fafc;
+}
+
+/* Bubbles */
+.message {
+  max-width: 75%;
+  padding: 14px 18px;
+  border-radius: 18px;
+  font-size: 15px;
+  line-height: 1.6;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.message.user {
+  align-self: flex-end;
+  background: #0078ff;
+  color: #fff;
+  border-bottom-right-radius: 6px;
+}
+
+.message.bot {
+  align-self: flex-start;
+  background: #f1f5f9;
+  color: #111827;
+  border-bottom-left-radius: 6px;
+}
+
+/* Bot message extras */
+.message.bot strong {
+  color: #000;
+  font-weight: 600;
+}
+.message.bot::before {
+  content: "🤖 ";
+  font-size: 16px;
+}
+
+/* Input bar */
+.chat-input-bar {
+  display: flex;
+  border-top: 1px solid #e2e8f0;
+  padding: 12px;
+  background: #fff;
+}
+
+#chat-input {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  outline: none;
+  font-size: 15px;
+}
+
+#send-btn {
+  margin-left: 8px;
+  background: #0078ff;
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 48px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#send-btn:hover {
+  background: #005fcc;
+}

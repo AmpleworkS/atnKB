@@ -6,25 +6,19 @@ from langchain_pinecone import Pinecone as LangchainPinecone
 from langchain_openai import OpenAIEmbeddings
 from llm_utils import llm_filter_chain
 
-# Load env
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 INDEX_NAME = os.getenv("PINECONE_INDEX")
 
-# Embeddings
 embeddings = OpenAIEmbeddings(
     model="text-embedding-3-large",
     openai_api_key=OPENAI_API_KEY
 )
 
-# ✅ Initialize Pinecone client (v7.3.0 style)
 pc = Pinecone(api_key=PINECONE_API_KEY)
-
-# ✅ Get the index handle
 index = pc.Index(INDEX_NAME)
 
-# ✅ LangChain wrapper
 vectorstore = LangchainPinecone(
     index,
     embeddings,

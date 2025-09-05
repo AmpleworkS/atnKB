@@ -13,11 +13,12 @@ filter_prompt = ChatPromptTemplate.from_messages([
     Output JSON in this format:
     {
         "filters": { ... },
-        "reasoning": "..."}
+        "reasoning": "..."
+    }
     Rules:
     - Only use existing fields: Name, Meeting ID, Email, Location, Phone Number, country, Customer Persona ID, Customer ID, Ad Lead, Ad Lead Qualification Reason, Created, Package of Customer Interest, New AdGroup ID, MeetDate, Qualifying Lead, Lead qualification Reason, Tags from GHL, Sels_Rep Name, Investment motivation, buying urgency, sales pitch refinement, Next Steps, Decision liquidity info, Pain points Objections Outcomes, Engagement Level, Investable Assets, Investment Level, Risk Profile , Supporting Justification/Description, Persona Type.
     - If no filters apply, return empty {} for filters.
-    - Return **only JSON**, no extra text.
+    - Return ONLY JSON, no extra text.
     """),
     ("human", "{query}")
 ])
