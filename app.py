@@ -35,6 +35,44 @@ if "last_customer" not in st.session_state:
     st.session_state.last_customer = None  # memory for entity tracking
 
 # ========================
+# EXTRA HELPERS (FIXED COLUMN NAME)
+# ========================
+def get_package_counts():
+    sql = """
+        SELECT 
+            CASE 
+                WHEN "Package of Customer Interest" IS NULL OR "Package of Customer Interest" = '' 
+                    THEN 'None'
+                ELSE "Package of Customer Interest"
+            END AS package_name,
+            COUNT(*)::int
+        FROM atn_table 
+        GROUP BY package_name
+        ORDER BY package_name;
+    """
+    result = run_postgres_query(sql)
+    if isinstance(result, str):
+        return result  # error string
+    return [(row[0], row[1]) for row in result]
+
+
+def get_all_packages():
+    sql = """
+        SELECT DISTINCT 
+            CASE 
+                WHEN "Package of Customer Interest" IS NULL OR "Package of Customer Interest" = '' 
+                    THEN 'None'
+                ELSE "Package of Customer Interest"
+            END AS package_name
+        FROM atn_table
+        ORDER BY package_name;
+    """
+    result = run_postgres_query(sql)
+    if isinstance(result, str):
+        return result  # error string
+    return [(row[0],) for row in result]
+
+# ========================
 # 3. RENDER CHAT HISTORY
 # ========================
 set_custom_css()
@@ -118,7 +156,31 @@ if query := st.chat_input("Ask me about customer insights..."):
             else:
                 answer = ("I couldn't identify a counting pattern in your question. "
                           "Try asking: 'How many customers are interested in Diamond?'")
-        
+
+        # --- Division of customers by package (improved detection) ---
+        elif any(kw in lower_q for kw in ["division", "divide", "distribution", "breakdown", "split", "group"]) and "package" in lower_q:
+            pg_result = get_package_counts()
+            if isinstance(pg_result, str):
+                answer = pg_result
+            elif pg_result:
+                answer = "📊 Here's the division of customers by package:\n\n"
+                for pkg, count in pg_result:
+                    answer += f"- **{pkg}**: {count} customers\n"
+            else:
+                answer = "No package data found."
+
+        # --- List all packages ---
+        elif "list" in lower_q and "package" in lower_q:
+            pg_result = get_all_packages()
+            if isinstance(pg_result, str):
+                answer = pg_result
+            elif pg_result:
+                answer = "📦 Here's a list of all the packages mentioned:\n\n"
+                for row in pg_result:
+                    answer += f"- {row[0]}\n"
+            else:
+                answer = "No packages found."
+
         # --- Handle Pinecone search queries (ID/email/insights) ---
         else:
             results, applied_filters, reasoning, fallback_used = search_with_filters(query)
@@ -126,10 +188,9 @@ if query := st.chat_input("Ask me about customer insights..."):
 
             # update last_customer if a name was detected
             if results:
-                # naive assumption: first line contains name
                 first_doc = results[0].page_content
                 for token in first_doc.split():
-                    if token.istitle():  # crude name detection
+                    if token.istitle():  
                         st.session_state.last_customer = token
                         break
 
