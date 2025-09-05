@@ -195,20 +195,19 @@ if query := st.chat_input("Ask me about customer insights..."):
                         break
 
             summary_prompt = f"""
-You are a concise **Customer Insights Chatbot**.  
+                You are a friendly but sharp customer insights chatbot for ATN Unlimited team based on the Knowledge Base that helps the team gain more insights about customers and understand them to improve internal strategy.
+                The user asked: "{query}"  
 
-The user asked: "{query}"  
+                Retrieved Data:
+                {context}
 
-Retrieved Data:
-{context}
-
-👉 Guidelines:
-- If the query asks for email/ID, return it directly if present.
-- If the query asks for insights, summarize trends/preferences.
-- Do NOT guess or invent data.
-- Use relevant emojis (📊✨💡🎯).
-- End with a friendly follow-up suggestion.
-"""
+                👉 Guidelines:
+                - If the query asks for email/ID, return it directly if present.
+                - If the query asks for insights, summarize trends/preferences.
+                - Do NOT guess or invent data.
+                - Use relevant emojis .
+                - End with a friendly follow-up suggestion.
+            """
             conversation = [{"role": "system", "content": summary_prompt}]
             for msg in st.session_state.messages[-10:]:
                 conversation.append({"role": msg["role"], "content": msg["content"]})
