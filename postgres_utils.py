@@ -34,6 +34,7 @@ def run_postgres_query(query: str, params: tuple = ()):
     except Exception as e:
         return f"❌ PostgreSQL Error: {str(e)}"
 
+
 # ------------------------
 # 2. Get all column names
 # ------------------------
@@ -53,24 +54,6 @@ def get_table_columns(table_name: str = "atn_table"):
     except Exception:
         return []
 
-# ------------------------
-# 2b. Get column types
-# ------------------------
-def get_column_types(table_name: str = "atn_table"):
-    try:
-        conn = psycopg2.connect(**DB_CONFIG)
-        cur = conn.cursor()
-        cur.execute("""
-            SELECT column_name, data_type
-            FROM information_schema.columns
-            WHERE table_name = %s;
-        """, (table_name,))
-        types = {row[0]: row[1] for row in cur.fetchall()}
-        cur.close()
-        conn.close()
-        return types
-    except Exception:
-        return {}
 
 # ------------------------
 # 3. Detect count queries
@@ -78,6 +61,7 @@ def get_column_types(table_name: str = "atn_table"):
 def is_count_query(query: str):
     keywords = ["how many", "count", "total", "number of"]
     return any(k in query.lower() for k in keywords)
+
 
 # ------------------------
 # 4. Fuzzy column mapping via LLM
@@ -111,22 +95,20 @@ def map_query_to_columns(user_query: str, columns: list[str]):
     except Exception:
         return []
 
+
 # ------------------------
 # 5. Build SQL from user query
 # ------------------------
 def parse_count_query(query: str, table_name: str = "atn_table"):
     q_lower = query.lower()
     columns = get_table_columns(table_name)
-    col_types = get_column_types(table_name)
 
     # Base query
     sql = f'SELECT COUNT(*) FROM "{table_name}"'
     conditions = []
     params = []
 
-    mappings = []
-
-    # Regex attempt
+    # Regex attempt (direct column mentions in query)
     for col in columns:
         col_lower = col.lower()
         if col_lower in q_lower:
@@ -134,37 +116,33 @@ def parse_count_query(query: str, table_name: str = "atn_table"):
             m = re.search(pattern, q_lower)
             if m:
                 val = m.group(1).strip()
-                mappings.append({"column": col, "value": val})
+                conditions.append(f'LOWER("{col}") LIKE %s')
+                params.append(f'%{val.lower()}%')
 
-    # Always include LLM mappings too
-    llm_mappings = map_query_to_columns(query, columns)
-    mappings.extend(llm_mappings)
+    # Fallback → LLM mapping
+    if not conditions:
+        # Fallback → LLM mapping (even if regex found something)
+        mappings = map_query_to_columns(query, columns)
 
-    # Deduplicate
-    seen = set()
-    unique_mappings = []
-    for m in mappings:
-        col = m.get("column")
-        val = m.get("value")
-        if (col, val) not in seen and col and val:
-            unique_mappings.append(m)
-            seen.add((col, val))
+        for m in mappings:
+            col = m.get("column")
+            val = m.get("value")
+            if col and val:
+                cond = f'LOWER("{col}") LIKE %s'
+                if cond not in conditions:  # avoid duplicates
+                    conditions.append(cond)
+                    params.append(f'%{val.lower()}%')
 
-    # Apply conditions
-    for m in unique_mappings:
-        col = m["column"]
-        val = m["value"]
-        if col_types.get(col) == "boolean":
-            if val.lower() in ["true", "yes", "1"]:
-                conditions.append(f'"{col}" = TRUE')
-            elif val.lower() in ["false", "no", "0"]:
-                conditions.append(f'"{col}" = FALSE')
-        else:
-            cond = f'LOWER("{col}") LIKE %s'
-            conditions.append(cond)
-            params.append(f'%{val.lower()}%')
+        # mappings = map_query_to_columns(query, columns)
+        # for m in mappings:
+        #     col = m.get("column")
+        #     val = m.get("value")
+        #     if col and val:
+        #         conditions.append(f'LOWER("{col}") LIKE %s')
+        #         params.append(f'%{val.lower()}%')
+        
 
-    # Final SQL
+    # Build final SQL
     if conditions:
         sql += " WHERE " + " AND ".join(conditions)
 

@@ -2,19 +2,34 @@ import os
 import json
 from dotenv import load_dotenv
 from pinecone import Pinecone
-from langchain_pinecone import PineconeVectorStore
+from langchain_pinecone import Pinecone as LangchainPinecone
 from langchain_openai import OpenAIEmbeddings
 from llm_utils import llm_filter_chain
 
+# Load env
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 INDEX_NAME = os.getenv("PINECONE_INDEX")
 
-embeddings = OpenAIEmbeddings(model="text-embedding-3-large", openai_api_key=OPENAI_API_KEY)
+# Embeddings
+embeddings = OpenAIEmbeddings(
+    model="text-embedding-3-large",
+    openai_api_key=OPENAI_API_KEY
+)
+
+# ✅ Initialize Pinecone client (v7.3.0 style)
 pc = Pinecone(api_key=PINECONE_API_KEY)
+
+# ✅ Get the index handle
 index = pc.Index(INDEX_NAME)
-vectorstore = PineconeVectorStore(index=index, embedding=embeddings, text_key="text")
+
+# ✅ LangChain wrapper
+vectorstore = LangchainPinecone(
+    index,
+    embeddings,
+    text_key="text"
+)
 
 def decide_filters(query: str):
     try:
