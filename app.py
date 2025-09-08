@@ -164,20 +164,20 @@ def chat():
                     break
 
         summary_prompt = f"""
-You are a concise **Customer Insights Chatbot**.
+            You are a concise **Customer Insights Chatbot**.
 
-The user asked: "{resolved_query}"
+            The user asked: "{resolved_query}"
 
-Retrieved Data:
-{context}
+            Retrieved Data:
+            {context}
 
-👉 Guidelines:
-- If the query asks for email/ID, return it directly if present.
-- If the query asks for insights, summarize trends/preferences.
-- Do NOT guess or invent data.
-- Use relevant emojis (📊✨💡🎯).
-- End with a friendly follow-up suggestion.
-"""
+            Guidelines:
+            - If the query asks for email/ID, return it directly if present. If not, say "I don't have that info."
+            - If the query asks for insights, summarize trends/preferences.
+            - Do NOT guess or invent data.
+            - Use relevant emojis (📊✨💡🎯).
+            - End with a friendly follow-up suggestion questions user can ask next.
+            """
         conversation = [{"role": "system", "content": summary_prompt}]
         for m in msgs[-10:]:
             conversation.append({"role": m["role"], "content": m["content"]})
