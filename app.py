@@ -1,12 +1,13 @@
 import os
-import html
+import psycopg2
+import json
 from flask import Flask, render_template, request, session, jsonify
 from dotenv import load_dotenv
 
-from postgres_utils import run_postgres_query, is_count_query, parse_count_query
+from postgres_utils import run_postgres_query
 from pinecone_utils import search_with_filters
 from llm_utils import llm
-from ui_utils import contains_html, markdown_like_to_html
+from ui_utils import markdown_like_to_html
 
 # ========================
 # 1. ENV + APP SETUP
@@ -15,65 +16,114 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 
+# PostgreSQL connection details from .env
+DB_CONFIG = {
+    "dbname": os.getenv("DB_NAME"),
+    "user": os.getenv("DB_USER"),
+    "password": os.getenv("DB_PASSWORD"),
+    "host": os.getenv("DB_HOST"),
+    "port": os.getenv("DB_PORT")
+}
+
+# Test connection at startup
+try:
+    conn = psycopg2.connect(**DB_CONFIG)
+    conn.close()
+except Exception as e:
+    raise RuntimeError(f"Database connection failed: {e}")
+
 if not OPENAI_API_KEY or not PINECONE_API_KEY:
     raise RuntimeError("Please set OPENAI_API_KEY and PINECONE_API_KEY in .env")
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "supersecret")
 
-# small helper for session init
+
 def ensure_session():
+    """Make sure session has default state."""
     if "messages" not in session:
-        session["messages"] = [
-            {"role": "assistant", "content": "Hi — ask me anything about customer insights."}
-        ]
+        session["messages"] = []
     if "last_customer" not in session:
         session["last_customer"] = None
 
-# ========================
-# EXTRA HELPERS (FIXED COLUMN NAME)
-# ========================
-def get_package_counts():
-    sql = """
-        SELECT 
-            CASE 
-                WHEN "Package of Customer Interest" IS NULL OR "Package of Customer Interest" = '' 
-                    THEN 'None'
-                ELSE "Package of Customer Interest"
-            END AS package_name,
-            COUNT(*)::int
-        FROM atn_table 
-        GROUP BY package_name
-        ORDER BY package_name;
-    """
-    result = run_postgres_query(sql)
-    if isinstance(result, str):
-        return result
-    return [(row[0], row[1]) for row in result]
-
-def get_all_packages():
-    sql = """
-        SELECT DISTINCT 
-            CASE 
-                WHEN "Package of Customer Interest" IS NULL OR "Package of Customer Interest" = '' 
-                    THEN 'None'
-                ELSE "Package of Customer Interest"
-            END AS package_name
-        FROM atn_table
-        ORDER BY package_name;
-    """
-    result = run_postgres_query(sql)
-    if isinstance(result, str):
-        return result
-    return [(row[0],) for row in result]
 
 # ========================
-# 2. ROUTES
+# 2. TOOL DEFINITIONS
+# ========================
+TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "postgres_tool",
+            "description": """
+Run SQL queries on the atn_table.
+
+Schema:
+Table: atn_table
+Important Columns:
+- "Customer ID" (text, primary key)
+- "Meeting ID" (text)
+- "Customer Persona ID" (text)
+- "Sales_Rep Name" (text)
+- "Customer Name" (text)
+- "Email" (text)
+- "Package of Customer Interest" (text)
+- "Phone Number" (text)
+- "Location" (text)
+- "Country" (text)
+- "Pain points Objections Outcomes" (text)
+- "Investment Level" (text)
+- "Engagement Level" (text)
+- "Risk Profile" (text)
+
+⚠️ Rules for SQL:
+- Always wrap column names in double quotes (" ") because they contain spaces.
+- Table name is always atn_table.
+- Example queries:
+    - Get customer ID for Louis Davis → SELECT "Customer ID" FROM atn_table WHERE "Customer Name" ILIKE '%Louis Davis%';
+    - Count customers in Diamond Package → SELECT COUNT(*) FROM atn_table WHERE "Package of Customer Interest" ILIKE '%Diamond%';
+    - List all customer names → SELECT "Customer Name" FROM atn_table LIMIT 456;
+""",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "A valid SQL query using atn_table."
+                    }
+                },
+                "required": ["query"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "pinecone_tool",
+            "description": "Search semantic knowledge base for customer insights, preferences, or unstructured data like pain points.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Search string or natural language query."
+                    }
+                },
+                "required": ["query"]
+            }
+        }
+    }
+]
+
+
+# ========================
+# 3. ROUTES
 # ========================
 @app.route("/", methods=["GET"])
 def index():
     ensure_session()
     return render_template("chat.html", messages=session["messages"])
+
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -86,109 +136,67 @@ def chat():
     msgs = session["messages"]
     msgs.append({"role": "user", "content": user_query})
 
-    lower_q = user_query.lower().strip()
+    # ========== STEP 1: Call LLM with tools ==========
+    conversation = [
+        {"role": "system", "content": """
+You are a **Customer Insights Chatbot**.
+You have access to two tools:
+- postgres_tool → for structured data like customer_id, number of customers, filtering by attributes.
+- pinecone_tool → for semantic insights like customer pain points, goals, or free-text knowledge base queries.
+
+Rules:
+1. Always try postgres_tool when customer_id, counts, or structured fields are requested.
+2. Use pinecone_tool when the query is about pain points, unstructured notes, or insights.
+3. Always return clear, natural answers using tool results. Never say "I cannot access". If a query fails, retry with simpler SQL.
+4. Keep answers concise and human-friendly.
+"""}
+    ] + msgs[-10:]
+
+    response = llm.invoke(conversation, tools=TOOLS)
+
     answer = ""
+    tool_results = {}
 
-    # --- Pronoun Resolution ---
-    pronouns = ["his", "her", "their"]
-    resolved_query = user_query
-    if any(p in lower_q for p in pronouns) and session.get("last_customer"):
-        for p in pronouns:
-            resolved_query = resolved_query.replace(p, session["last_customer"])
+    # ========== STEP 2: Handle tool calls ==========
+    if getattr(response, "tool_calls", None):
+        followup_conversation = conversation + [response]
 
-    # --- Meta-memory queries ---
-    if "first question" in lower_q:
-        first_q = next((m["content"] for m in msgs if m["role"] == "user"), None)
-        answer = f"Your first question was: **{first_q}** 💡" if first_q else "I couldn't find your first question."
+        for call in response.tool_calls:
+            fn_name = call.function.name
+            args = json.loads(call.function.arguments)
 
-    elif "last question" in lower_q or "previous question" in lower_q:
-        user_msgs = [m["content"] for m in msgs if m["role"] == "user"]
-        answer = f"Your last question was: **{user_msgs[-2]}** 📝" if len(user_msgs) >= 2 else "You haven't asked any previous questions yet."
+            if fn_name == "postgres_tool":
+                result = run_postgres_query(args["query"])
+                tool_results[call.id] = result
 
-    elif "all my questions" in lower_q or "summarize" in lower_q:
-        user_msgs = [m["content"] for m in msgs if m["role"] == "user"]
-        if user_msgs:
-            formatted = "\n".join([f"{i+1}. {q}" for i, q in enumerate(user_msgs)])
-            answer = f"Here are all the questions you've asked so far:\n\n{formatted}"
-        else:
-            answer = "You haven't asked any questions yet."
+            elif fn_name == "pinecone_tool":
+                results, _, _, _ = search_with_filters(args["query"])
+                result_text = "\n".join(
+                    [doc.page_content for doc in results]
+                ) if results else "No results found."
+                tool_results[call.id] = result_text
 
-    # --- Postgres count queries ---
-    elif is_count_query(resolved_query):
-        sql, params = parse_count_query(resolved_query)
-        if sql:
-            pg_result = run_postgres_query(sql, params)
-            if isinstance(pg_result, str) and pg_result.startswith("❌"):
-                answer = pg_result
-            elif isinstance(pg_result, list) and pg_result:
-                count_val = pg_result[0][0]
-                answer = f"There are {count_val} records available 📊."
-            else:
-                answer = "No matching records found."
-        else:
-            answer = ("I couldn't identify a counting pattern in your question. "
-                      "Try asking: 'How many customers are interested in Diamond?'")
+        # Add tool outputs back into conversation
+        for tool_id, result in tool_results.items():
+            followup_conversation.append({
+                "role": "tool",
+                "tool_call_id": tool_id,
+                "content": result
+            })
 
-    # --- Division of customers by package ---
-    elif any(kw in lower_q for kw in ["division", "divide", "distribution", "breakdown", "split", "group"]) and "package" in lower_q:
-        pg_result = get_package_counts()
-        if isinstance(pg_result, str):
-            answer = pg_result
-        elif pg_result:
-            lines = [f"- **{pkg}**: {count} customers" for pkg, count in pg_result]
-            answer = "📊 Here's the division of customers by package:\n\n" + "\n".join(lines)
-        else:
-            answer = "No package data found."
+        # Final LLM response
+        final_response = llm.invoke(followup_conversation)
+        answer = final_response.content
 
-    # --- List all packages ---
-    elif "list" in lower_q and "package" in lower_q:
-        pg_result = get_all_packages()
-        if isinstance(pg_result, str):
-            answer = pg_result
-        elif pg_result:
-            lines = [f"- {row[0]}" for row in pg_result]
-            answer = "📦 Here's a list of all the packages mentioned:\n\n" + "\n".join(lines)
-        else:
-            answer = "No packages found."
-
-    # --- Pinecone search ---
     else:
-        results, applied_filters, reasoning, fallback_used = search_with_filters(resolved_query)
-        context = "\n\n".join([doc.page_content for doc in results]) if results else "No results found."
+        answer = response.content
 
-        if results:
-            first_doc = results[0].page_content
-            for token in first_doc.split():
-                if token.istitle():
-                    session["last_customer"] = token
-                    break
-
-        summary_prompt = f"""
-            You are a concise **Customer Insights Chatbot**.
-
-            The user asked: "{resolved_query}"
-
-            Retrieved Data:
-            {context}
-
-            Guidelines:
-            - If the query asks for email/ID, return it directly if present. If not, say "I don't have that info."
-            - If the query asks for insights, summarize trends/preferences.
-            - Do NOT guess or invent data.
-            - Use relevant emojis (📊✨💡🎯).
-            - End with a friendly follow-up suggestion questions user can ask next.
-            """
-        conversation = [{"role": "system", "content": summary_prompt}]
-        for m in msgs[-10:]:
-            conversation.append({"role": m["role"], "content": m["content"]})
-        conversation.append({"role": "user", "content": resolved_query})
-
-        answer = llm.invoke(conversation).content
-
+    # Save assistant reply
     msgs.append({"role": "assistant", "content": answer})
     session["messages"] = msgs
 
     return jsonify({"ok": True, "reply": answer})
+
 
 # ------------- run -------------
 if __name__ == "__main__":

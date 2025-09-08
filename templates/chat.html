@@ -1,19 +1,19 @@
 {% extends "base.html" %}
 {% block body %}
-<div class="chat-container">
-  
   <!-- Header -->
   <div class="chat-header">
-    <h2>💬 Customer Insights Bot</h2>
+    📊 Customer Insights Bot
   </div>
 
-  <!-- Messages -->
-  <div id="chat-window" class="chat-window"></div>
+  <!-- Chat Window -->
+  <div class="chat-window" id="chat-window">
+    <!-- Messages will load dynamically -->
+  </div>
   
   <!-- Input -->
   <div class="chat-input-bar">
-    <input type="text" id="chat-input" placeholder="Type your message..." autofocus />
+    <input id="chat-input" type="text" placeholder="Ask me about customer insights..." />
     <button id="send-btn">➤</button>
   </div>
-</div>
+
 {% endblock %}

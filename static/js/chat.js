@@ -11,45 +11,64 @@ document.addEventListener("DOMContentLoaded", () => {
       .replace(/\n/g, "<br>");                           // line breaks
   }
 
-  function addMessage(content, role, isHTML = false) {
-    const row = document.createElement("div");
-    row.classList.add("message-row", role);
+  // Add chat message
+  function addMessage(content, role) {
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("message-wrapper", role);
+
+    const msg = document.createElement("div");
+    msg.classList.add("message", role);
+    msg.innerHTML = formatMessage(content);
 
     const avatar = document.createElement("div");
     avatar.classList.add("avatar");
     avatar.textContent = role === "bot" ? "🤖" : "👤";
 
-    const msg = document.createElement("div");
-    msg.classList.add("message", role);
-    msg.innerHTML = isHTML ? content : formatMessage(content);
+    wrapper.appendChild(role === "bot" ? avatar : msg);
+    wrapper.appendChild(role === "bot" ? msg : avatar);
 
-    if (role === "bot") {
-      row.appendChild(avatar);
-      row.appendChild(msg);
-    } else {
-      row.appendChild(msg);
-      row.appendChild(avatar);
-    }
-
-    chatWindow.appendChild(row);
+    chatWindow.appendChild(wrapper);
     chatWindow.scrollTop = chatWindow.scrollHeight;
-    return msg; // return element (for loader replacement)
+    return wrapper;
+  }
+
+  // Add typing indicator
+  function showTyping() {
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("message-wrapper", "bot", "typing");
+
+    const msg = document.createElement("div");
+    msg.classList.add("message", "bot");
+
+    const dots = document.createElement("div");
+    dots.classList.add("typing-dots");
+    dots.innerHTML = "<span></span><span></span><span></span>";
+
+    const avatar = document.createElement("div");
+    avatar.classList.add("avatar");
+    avatar.textContent = "🤖";
+
+    msg.appendChild(dots);
+    wrapper.appendChild(avatar);
+    wrapper.appendChild(msg);
+
+    chatWindow.appendChild(wrapper);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+    return wrapper;
   }
 
   function sendMessage() {
     const text = chatInput.value.trim();
     if (!text) return;
+
+    // User message
     addMessage(text, "user");
     chatInput.value = "";
 
-    // Add loader bubble
-    const loader = addMessage(
-      `<span class="typing-dots"><span></span><span></span><span></span></span>`,
-      "bot",
-      true
-    );
+    // Typing indicator
+    const typingBubble = showTyping();
 
-    // Call backend API
+    // Send to backend
     fetch("/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -57,11 +76,11 @@ document.addEventListener("DOMContentLoaded", () => {
     })
       .then(res => res.json())
       .then(data => {
-        loader.parentElement.remove(); // remove loader row
+        typingBubble.remove(); // remove typing dots
         addMessage(data.reply, "bot");
       })
       .catch(() => {
-        loader.parentElement.remove();
+        typingBubble.remove(); // remove typing dots
         addMessage("❌ Error reaching server", "bot");
       });
   }
@@ -71,6 +90,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.key === "Enter") sendMessage();
   });
 
-  // Initial greet
-  addMessage("👋 Hi! Ask me anything about customer insights.", "bot");
+  // ✅ Only one initial greeting
+  addMessage("Hi! Ask me anything about customer insights.", "bot");
 });
