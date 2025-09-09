@@ -61,22 +61,30 @@ Run SQL queries on the atn_table.
 Schema:
 Table: atn_table
 Important Columns:
-- "Customer ID" (text, primary key)
-- "Meeting ID" (text)
-- "Customer Persona ID" (text)
-- "Sales_Rep Name" (text)
-- "Customer Name" (text)
-- "Email" (text)
-- "Package of Customer Interest" (text)
-- "Phone Number" (text)
-- "Location" (text)
-- "Country" (text)
-- "Pain points Objections Outcomes" (text)
-- "Investment Level" (text)
-- "Engagement Level" (text)
-- "Risk Profile" (text)
 
-⚠️ Rules for SQL:
+    "Customer ID" TEXT,
+    "Sels_Rep Name" TEXT,
+    "Customer Name" TEXT,
+    "Email" TEXT,
+    "Qualifying Lead" BOOLEAN,
+    "Lead qualification Reason" TEXT,
+    "Ad Lead" BOOLEAN,
+    "Ad Lead Qualification Reason" TEXT,
+    "Package of Customer Interest" TEXT,
+    "Tags from GHL" TEXT,
+    "Phone Number" TEXT,
+    "Location" TEXT,
+    "country" TEXT,
+    "Pain points Objections Outcomes" TEXT,
+    "Investment Level" TEXT,
+    "Investable Assets" TEXT,
+    "Engagement Level" TEXT,
+    "Risk Profile" TEXT,
+    "Persona Type" TEXT,
+    "Postal Code" VARCHAR(200),
+    "Package Purchased" TEXT
+
+Rules for SQL:
 - Always wrap column names in double quotes (" ") because they contain spaces.
 - Table name is always atn_table.
 - Example queries:
@@ -139,7 +147,7 @@ def chat():
     # ========== STEP 1: Call LLM with tools ==========
     conversation = [
         {"role": "system", "content": """
-You are a **Customer Insights Chatbot**.
+You are a Customer Insights Chatbot.
 You have access to two tools:
 - postgres_tool → for structured data like customer_id, number of customers, filtering by attributes.
 - pinecone_tool → for semantic insights like customer pain points, goals, or free-text knowledge base queries.
