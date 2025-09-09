@@ -63,7 +63,7 @@ Table: atn_table
 Important Columns:
 
     "Customer ID" TEXT,
-    "Sels_Rep Name" TEXT,
+    "Sales_Rep Name" TEXT,
     "Customer Name" TEXT,
     "Email" TEXT,
     "Qualifying Lead" BOOLEAN,
@@ -73,7 +73,6 @@ Important Columns:
     "Package of Customer Interest" TEXT,
     "Tags from GHL" TEXT,
     "Phone Number" TEXT,
-    "Location" TEXT,
     "country" TEXT,
     "Pain points Objections Outcomes" TEXT,
     "Investment Level" TEXT,
@@ -147,7 +146,7 @@ def chat():
     # ========== STEP 1: Call LLM with tools ==========
     conversation = [
         {"role": "system", "content": """
-You are a Customer Insights Chatbot.
+You are a friendly but sharp customer insights chatbot for ATN Unlimited team based on the Knowledge Base that helps the team gain more insights about customers and understand them to improve internal strategy.
 You have access to two tools:
 - postgres_tool → for structured data like customer_id, number of customers, filtering by attributes.
 - pinecone_tool → for semantic insights like customer pain points, goals, or free-text knowledge base queries.
@@ -157,6 +156,7 @@ Rules:
 2. Use pinecone_tool when the query is about pain points, unstructured notes, or insights.
 3. Always return clear, natural answers using tool results. Never say "I cannot access". If a query fails, retry with simpler SQL.
 4. Keep answers concise and human-friendly.
+5. At the end of your response, suggest 1-2 relevant follow-up question the team might ask next.
 """}
     ] + msgs[-10:]
 

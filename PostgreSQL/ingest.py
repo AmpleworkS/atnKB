@@ -1,12 +1,13 @@
 import json
 import psycopg2
+import os
 
 DB_CONFIG = {
-    "dbname": "Kb_data",
-    "user": "postgres",
-    "password": "SaptaM@25",
-    "host": "localhost",
-    "port": "5432"
+    "dbname": os.getenv("DB_NAME"),
+    "user": os.getenv("DB_USER"),
+    "password": os.getenv("DB_PASSWORD"),
+    "host": os.getenv("DB_HOST"),
+    "port": os.getenv("DB_PORT"),
 }
 
 conn = psycopg2.connect(**DB_CONFIG)
@@ -16,7 +17,7 @@ with open("data (2).json", "r", encoding="utf-8") as f:
     records = json.load(f)  # This should now be a list
 
 insert_query = """
-INSERT INTO kb_table (
+INSERT INTO atn_table (
     "Customer ID", "Customer Name", "Email", "Phone Number", "country", "Sales_Rep Name", "Qualifying Lead", "Lead qualification Reason", "Ad Lead Qualification Reason",  "Ad Lead", 
     "Package of Customer Interest","Package Purchased","Postal Code", "Pain points Objections Outcomes", "Tags from GHL","Investment Level", "Investable Assets","Engagement Level", "Risk Profile", "Persona Type"
 ) VALUES (
