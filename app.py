@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 from postgres_utils import run_postgres_query
 from pinecone_utils import search_with_filters
 from llm_utils import llm
-from ui_utils import markdown_like_to_html
 
 # ========================
 # 1. ENV + APP SETUP

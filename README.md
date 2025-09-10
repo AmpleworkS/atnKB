@@ -19,7 +19,7 @@ This chatbot enables businesses to query customer data, analyze pain points, and
 - **Backend:** Flask  
 - **Database:** PostgreSQL  
 - **Vector DB:** Pinecone  
-- **LLM Provider:** OpenAI GPT (GPT-4o by default)  
+- **LLM Provider:** OpenAI GPT (GPT-4o)  
 - **Embeddings:** OpenAI `text-embedding-3-large`  
 - **Frontend:** HTML, CSS, JavaScript  
 - **Environment Management:** `python-dotenv`  
@@ -58,17 +58,26 @@ pip install -r requirements.txt
 3. Configure Environment Variables
 
 Create a .env file in the root directory:
-env
+.env
 
 OPENAI_API_KEY = <your_openai_api_key>
+
 PINECONE_API_KEY= <your_pinecone_api_key>
+
 PINECONE_INDEX = <your_index_name>
+
 PINECONE_NAMESPACE = <your_namespace_name>
+
 DB_NAME= <your_db_name>
+
 DB_USER= <your_db_user_name>
+
 DB_PASSWORD= <your_db_password>
+
 DB_HOST= <your_db_host>
+
 DB_PORT= <your_db_port>
+
 
 4. Run the Application
 python app.py
