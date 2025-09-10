@@ -13,7 +13,7 @@ DB_CONFIG = {
 conn = psycopg2.connect(**DB_CONFIG)
 cur = conn.cursor()
 
-with open("data (2).json", "r", encoding="utf-8") as f:
+with open("data (4).json", "r", encoding="utf-8") as f:
     records = json.load(f)  # This should now be a list
 
 insert_query = """
