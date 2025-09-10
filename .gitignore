@@ -11,3 +11,5 @@ wheels/
 .env
 /zipfile
 chatbot.py
+data (4).json
+ingest.py
