@@ -11,26 +11,6 @@ document.addEventListener("DOMContentLoaded", () => {
       .replace(/\n/g, "<br>");                           // line breaks
   }
 
-  // Add chat message
-  function addMessage(content, role) {
-    const wrapper = document.createElement("div");
-    wrapper.classList.add("message-wrapper", role);
-
-    const msg = document.createElement("div");
-    msg.classList.add("message", role);
-    msg.innerHTML = formatMessage(content);
-
-    const avatar = document.createElement("div");
-    avatar.classList.add("avatar");
-    avatar.textContent = role === "bot" ? "🤖" : "👤";
-
-    wrapper.appendChild(role === "bot" ? avatar : msg);
-    wrapper.appendChild(role === "bot" ? msg : avatar);
-
-    chatWindow.appendChild(wrapper);
-    chatWindow.scrollTop = chatWindow.scrollHeight;
-    return wrapper;
-  }
 
   // Add typing indicator
   function showTyping() {
@@ -56,6 +36,61 @@ document.addEventListener("DOMContentLoaded", () => {
     chatWindow.scrollTop = chatWindow.scrollHeight;
     return wrapper;
   }
+  // Add chat message
+function addMessage(content, role) {
+  const wrapper = document.createElement("div");
+  wrapper.classList.add("message-wrapper", role);
+
+  const msg = document.createElement("div");
+  msg.classList.add("message", role);
+  msg.innerHTML = formatMessage(content);
+
+  const avatar = document.createElement("div");
+  avatar.classList.add("avatar");
+
+  // Use Lucide instead of emoji
+  avatar.innerHTML =
+    role === "bot"
+      ? '<i data-lucide="bot"></i>'
+      : '<i data-lucide="user"></i>';
+
+  wrapper.appendChild(role === "bot" ? avatar : msg);
+  wrapper.appendChild(role === "bot" ? msg : avatar);
+
+  chatWindow.appendChild(wrapper);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+
+  lucide.createIcons(); // refresh icons
+  return wrapper;
+}
+
+// Typing indicator
+function showTyping() {
+  const wrapper = document.createElement("div");
+  wrapper.classList.add("message-wrapper", "bot", "typing");
+
+  const msg = document.createElement("div");
+  msg.classList.add("message", "bot");
+
+  const dots = document.createElement("div");
+  dots.classList.add("typing-dots");
+  dots.innerHTML = "<span></span><span></span><span></span>";
+
+  const avatar = document.createElement("div");
+  avatar.classList.add("avatar");
+  avatar.innerHTML = '<i data-lucide="bot"></i>';
+
+  msg.appendChild(dots);
+  wrapper.appendChild(avatar);
+  wrapper.appendChild(msg);
+
+  chatWindow.appendChild(wrapper);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+
+  lucide.createIcons();
+  return wrapper;
+}
+
 
   function sendMessage() {
     const text = chatInput.value.trim();

@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 from postgres_utils import run_postgres_query
 from pinecone_utils import search_with_filters
 from llm_utils import llm
-from ui_utils import markdown_like_to_html
 
 # ========================
 # 1. ENV + APP SETUP
@@ -61,22 +60,29 @@ Run SQL queries on the kb_table.
 Schema:
 Table: kb_table
 Important Columns:
-- "Customer ID" (text, primary key)
-- "Meeting ID" (text)
-- "Customer Persona ID" (text)
-- "Sales_Rep Name" (text)
-- "Customer Name" (text)
-- "Email" (text)
-- "Package of Customer Interest" (text)
-- "Phone Number" (text)
-- "Location" (text)
-- "Country" (text)
-- "Pain points Objections Outcomes" (text)
-- "Investment Level" (text)
-- "Engagement Level" (text)
-- "Risk Profile" (text)
 
-⚠️ Rules for SQL:
+    "Customer ID" TEXT,
+    "Sales_Rep Name" TEXT,
+    "Customer Name" TEXT,
+    "Email" TEXT,
+    "Qualifying Lead" BOOLEAN,
+    "Lead qualification Reason" TEXT,
+    "Ad Lead" BOOLEAN,
+    "Ad Lead Qualification Reason" TEXT,
+    "Package of Customer Interest" TEXT,
+    "Tags from GHL" TEXT,
+    "Phone Number" TEXT,
+    "country" TEXT,
+    "Pain points Objections Outcomes" TEXT,
+    "Investment Level" TEXT,
+    "Investable Assets" TEXT,
+    "Engagement Level" TEXT,
+    "Risk Profile" TEXT,
+    "Persona Type" TEXT,
+    "Postal Code" VARCHAR(200),
+    "Package Purchased" TEXT
+
+Rules for SQL:
 - Always wrap column names in double quotes (" ") because they contain spaces.
 - Table name is always kb_table.
 - Example queries:
@@ -139,7 +145,7 @@ def chat():
     # ========== STEP 1: Call LLM with tools ==========
     conversation = [
         {"role": "system", "content": """
-You are a **Customer Insights Chatbot**.
+You are a friendly but sharp customer insights chatbot for ATN Unlimited team based on the Knowledge Base that helps the team gain more insights about customers and understand them to improve internal strategy.
 You have access to two tools:
 - postgres_tool → for structured data like customer_id, number of customers, filtering by attributes.
 - pinecone_tool → for semantic insights like customer pain points, goals, or free-text knowledge base queries.
@@ -149,6 +155,7 @@ Rules:
 2. Use pinecone_tool when the query is about pain points, unstructured notes, or insights.
 3. Always return clear, natural answers using tool results. Never say "I cannot access". If a query fails, retry with simpler SQL.
 4. Keep answers concise and human-friendly.
+5. At the end of your response, suggest 1-2 relevant follow-up question the team might ask next.
 """}
     ] + msgs[-10:]
 

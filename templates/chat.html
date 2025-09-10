@@ -2,18 +2,15 @@
 {% block body %}
   <!-- Header -->
   <div class="chat-header">
-    📊 Customer Insights Bot
+    <i data-lucide="chart-line"></i> Customer Insights Chatot
   </div>
 
   <!-- Chat Window -->
-  <div class="chat-window" id="chat-window">
-    <!-- Messages will load dynamically -->
-  </div>
+  <div class="chat-window" id="chat-window"></div>
   
   <!-- Input -->
   <div class="chat-input-bar">
     <input id="chat-input" type="text" placeholder="Ask me about customer insights..." />
-    <button id="send-btn">➤</button>
+    <button id="send-btn"><i data-lucide="send"></i></button>
   </div>
-
 {% endblock %}
