@@ -56,10 +56,10 @@ TOOLS = [
         "function": {
             "name": "postgres_tool",
             "description": """
-Run SQL queries on the atn_table.
+Run SQL queries on the kb_table.
 
 Schema:
-Table: atn_table
+Table: kb_table
 Important Columns:
 - "Customer ID" (text, primary key)
 - "Meeting ID" (text)
@@ -78,18 +78,18 @@ Important Columns:
 
 ⚠️ Rules for SQL:
 - Always wrap column names in double quotes (" ") because they contain spaces.
-- Table name is always atn_table.
+- Table name is always kb_table.
 - Example queries:
-    - Get customer ID for Louis Davis → SELECT "Customer ID" FROM atn_table WHERE "Customer Name" ILIKE '%Louis Davis%';
-    - Count customers in Diamond Package → SELECT COUNT(*) FROM atn_table WHERE "Package of Customer Interest" ILIKE '%Diamond%';
-    - List all customer names → SELECT "Customer Name" FROM atn_table LIMIT 456;
+    - Get customer ID for Louis Davis → SELECT "Customer ID" FROM kb_table WHERE "Customer Name" ILIKE '%Louis Davis%';
+    - Count customers in Diamond Package → SELECT COUNT(*) FROM kb_table WHERE "Package of Customer Interest" ILIKE '%Diamond%';
+    - List all customer names → SELECT "Customer Name" FROM kb_table LIMIT 456;
 """,
             "parameters": {
                 "type": "object",
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "A valid SQL query using atn_table."
+                        "description": "A valid SQL query using kb_table."
                     }
                 },
                 "required": ["query"]
@@ -161,7 +161,7 @@ Rules:
     if getattr(response, "tool_calls", None):
         followup_conversation = conversation + [response]
 
-        for call in response.tool_calls:
+        for call in response.tool_calls: 
             fn_name = call.function.name
             args = json.loads(call.function.arguments)
 
