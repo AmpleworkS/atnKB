@@ -11,8 +11,35 @@ document.addEventListener("DOMContentLoaded", () => {
       .replace(/\n/g, "<br>");                           // line breaks
   }
 
+  // Add chat message
+  function addMessage(content, role) {
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("message-wrapper", role);
 
-  // Add typing indicator
+    const msg = document.createElement("div");
+    msg.classList.add("message", role);
+    msg.innerHTML = formatMessage(content);
+
+    const avatar = document.createElement("div");
+    avatar.classList.add("avatar");
+
+    // Use Lucide icons
+    avatar.innerHTML =
+      role === "bot"
+        ? '<i data-lucide="bot"></i>'
+        : '<i data-lucide="user"></i>';
+
+    wrapper.appendChild(role === "bot" ? avatar : msg);
+    wrapper.appendChild(role === "bot" ? msg : avatar);
+
+    chatWindow.appendChild(wrapper);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+
+    lucide.createIcons(); // refresh icons
+    return wrapper;
+  }
+
+  // Typing indicator
   function showTyping() {
     const wrapper = document.createElement("div");
     wrapper.classList.add("message-wrapper", "bot", "typing");
@@ -26,7 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const avatar = document.createElement("div");
     avatar.classList.add("avatar");
-    avatar.textContent = "🤖";
+    avatar.innerHTML = '<i data-lucide="bot"></i>';
 
     msg.appendChild(dots);
     wrapper.appendChild(avatar);
@@ -34,64 +61,40 @@ document.addEventListener("DOMContentLoaded", () => {
 
     chatWindow.appendChild(wrapper);
     chatWindow.scrollTop = chatWindow.scrollHeight;
+
+    lucide.createIcons();
     return wrapper;
   }
-  // Add chat message
-function addMessage(content, role) {
-  const wrapper = document.createElement("div");
-  wrapper.classList.add("message-wrapper", role);
 
-  const msg = document.createElement("div");
-  msg.classList.add("message", role);
-  msg.innerHTML = formatMessage(content);
+  // Show chart message
+  function addChart(url) {
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("message-wrapper", "bot");
 
-  const avatar = document.createElement("div");
-  avatar.classList.add("avatar");
+    const msg = document.createElement("div");
+    msg.classList.add("message", "bot");
 
-  // Use Lucide instead of emoji
-  avatar.innerHTML =
-    role === "bot"
-      ? '<i data-lucide="bot"></i>'
-      : '<i data-lucide="user"></i>';
+    const img = document.createElement("img");
+    img.src = url;
+    img.alt = "Generated chart";
+    img.classList.add("chat-chart");
 
-  wrapper.appendChild(role === "bot" ? avatar : msg);
-  wrapper.appendChild(role === "bot" ? msg : avatar);
+    msg.appendChild(img);
 
-  chatWindow.appendChild(wrapper);
-  chatWindow.scrollTop = chatWindow.scrollHeight;
+    const avatar = document.createElement("div");
+    avatar.classList.add("avatar");
+    avatar.innerHTML = '<i data-lucide="bot"></i>';
 
-  lucide.createIcons(); // refresh icons
-  return wrapper;
-}
+    wrapper.appendChild(avatar);
+    wrapper.appendChild(msg);
 
-// Typing indicator
-function showTyping() {
-  const wrapper = document.createElement("div");
-  wrapper.classList.add("message-wrapper", "bot", "typing");
+    chatWindow.appendChild(wrapper);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
 
-  const msg = document.createElement("div");
-  msg.classList.add("message", "bot");
+    lucide.createIcons();
+  }
 
-  const dots = document.createElement("div");
-  dots.classList.add("typing-dots");
-  dots.innerHTML = "<span></span><span></span><span></span>";
-
-  const avatar = document.createElement("div");
-  avatar.classList.add("avatar");
-  avatar.innerHTML = '<i data-lucide="bot"></i>';
-
-  msg.appendChild(dots);
-  wrapper.appendChild(avatar);
-  wrapper.appendChild(msg);
-
-  chatWindow.appendChild(wrapper);
-  chatWindow.scrollTop = chatWindow.scrollHeight;
-
-  lucide.createIcons();
-  return wrapper;
-}
-
-
+  // Send message handler
   function sendMessage() {
     const text = chatInput.value.trim();
     if (!text) return;
@@ -113,6 +116,11 @@ function showTyping() {
       .then(data => {
         typingBubble.remove(); // remove typing dots
         addMessage(data.reply, "bot");
+
+        // 👇 Show chart if available
+        if (data.chart_url) {
+          addChart(data.chart_url);
+        }
       })
       .catch(() => {
         typingBubble.remove(); // remove typing dots
@@ -125,6 +133,6 @@ function showTyping() {
     if (e.key === "Enter") sendMessage();
   });
 
-  // ✅ Only one initial greeting
+  // ✅ Initial greeting
   addMessage("Hi! Ask me anything about customer insights.", "bot");
 });

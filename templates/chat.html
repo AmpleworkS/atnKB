@@ -2,7 +2,7 @@
 {% block body %}
   <!-- Header -->
   <div class="chat-header">
-    <i data-lucide="chart-line"></i> Customer Insights Chatot
+    <i data-lucide="chart-line"></i> Customer Insights Chatbot
   </div>
 
   <!-- Chat Window -->
@@ -10,7 +10,12 @@
   
   <!-- Input -->
   <div class="chat-input-bar">
-    <input id="chat-input" type="text" placeholder="Ask me about customer insights..." />
+    <input 
+      id="chat-input" 
+      type="text" 
+      placeholder="Ask me about customer insights..." 
+      autocomplete="off"
+    />
     <button id="send-btn"><i data-lucide="send"></i></button>
   </div>
 {% endblock %}
