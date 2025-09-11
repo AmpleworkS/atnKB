@@ -106,7 +106,7 @@ Rules for SQL:
         "type": "function",
         "function": {
             "name": "pinecone_tool",
-            "description": "Search semantic knowledge base for customer insights, preferences, or unstructured data like pain points.",
+            "description": "Search semantic knowledge base for customer insights, preferences, or unstructured data like pain points, differences.",
             "parameters": {
                 "type": "object",
                 "properties": {
