@@ -10,6 +10,7 @@ This chatbot enables businesses to query customer data, analyze pain points, and
 🔹 **Hybrid Querying:** Structured (Postgres) + Semantic (Pinecone).  
 🔹 **Natural Language Interface:** Powered by OpenAI GPT models.  
 🔹 **Customer Insights:** Retrieve pain points, objections, goals, and structured data.  
+🔹 **Visual Representation:** Automatically generates **bar, line, and pie charts** for aggregated data queries.  
 🔹 **Web UI:** Clean chat interface built with HTML, CSS, and JS.  
 🔹 **Scalable:** Can be deployed on Railway, Render, or any Flask-supported hosting.  
 
@@ -21,6 +22,7 @@ This chatbot enables businesses to query customer data, analyze pain points, and
 - **Vector DB:** Pinecone  
 - **LLM Provider:** OpenAI GPT (GPT-4o)  
 - **Embeddings:** OpenAI `text-embedding-3-large`  
+- **Visualization:** Matplotlib, Pandas  
 - **Frontend:** HTML, CSS, JavaScript  
 - **Environment Management:** `python-dotenv`  
 
@@ -93,6 +95,8 @@ Postgres Tool → for structured queries.
 
 Pinecone Tool → for semantic insights.
 
+Chart Generator Tool → for visual representation of aggregated SQL data.
+
 Tool results are added back into the conversation.
 
 LLM returns a human-friendly response.
@@ -106,6 +110,9 @@ UI displays the chatbot’s answer.
 
 “How many customers are in the Gold package?” → (Postgres)
 
+“Show me a bar chart of customers by packages.” → (Postgres + Chart Generator)
+
+“Give me a pie chart of package distribution.” → (Postgres + Chart Generator)
 
 ## ✨ Acknowledgments
 OpenAI for LLM APIs
@@ -115,3 +122,5 @@ Pinecone for vector database
 PostgreSQL for relational database
 
 Flask for backend framework
+
+Matplotlib & Pandas for visualization
