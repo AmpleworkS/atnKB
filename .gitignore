@@ -12,3 +12,5 @@ wheels/
 /zipfile
 chatbot.py
 data (4).json
+PostgreSQL\ingest.py
+PostgreSQL
