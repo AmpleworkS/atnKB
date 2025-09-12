@@ -17,11 +17,11 @@ PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 
 # PostgreSQL connection details from .env
 DB_CONFIG = {
-    "dbname": os.getenv("DB_NAME"),
-    "user": os.getenv("DB_USER"),
-    "password": os.getenv("DB_PASSWORD"),
-    "host": os.getenv("DB_HOST"),
-    "port": os.getenv("DB_PORT")
+    "dbname": os.getenv("PGDATABASE"),
+    "user": os.getenv("PGUSER"),
+    "password": os.getenv("PGPASSWORD"),
+    "host": os.getenv("PGHOST"),
+    "port": os.getenv("PGPORT")
 }
 
 # Test connection at startup
@@ -36,7 +36,6 @@ if not OPENAI_API_KEY or not PINECONE_API_KEY:
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "supersecret")
-
 
 def ensure_session():
     """Make sure session has default state."""
@@ -55,10 +54,10 @@ TOOLS = [
         "function": {
             "name": "postgres_tool",
             "description": """
-Run SQL queries on the atn_table.
+Run SQL queries on the kb_table.
 
 Schema:
-Table: atn_table
+Table: kb_table
 Important Columns:
 
     "Customer ID" TEXT,
@@ -84,18 +83,18 @@ Important Columns:
 
 Rules for SQL:
 - Always wrap column names in double quotes (" ") because they contain spaces.
-- Table name is always atn_table.
+- Table name is always kb_table.
 - Example queries:
-    - Get customer ID for Louis Davis → SELECT "Customer ID" FROM atn_table WHERE "Customer Name" ILIKE '%Louis Davis%';
-    - Count customers in Diamond Package → SELECT COUNT(*) FROM atn_table WHERE "Package of Customer Interest" ILIKE '%Diamond%';
-    - List all customer names → SELECT "Customer Name" FROM atn_table LIMIT 456;
+    - Get customer ID for Louis Davis → SELECT "Customer ID" FROM kb_table WHERE "Customer Name" ILIKE '%Louis Davis%';
+    - Count customers in Diamond Package → SELECT COUNT(*) FROM kb_table WHERE "Package of Customer Interest" ILIKE '%Diamond%';
+    - List all customer names → SELECT "Customer Name" FROM kb_table LIMIT 456;
 """,
             "parameters": {
                 "type": "object",
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "A valid SQL query using atn_table."
+                        "description": "A valid SQL query using kb_table."
                     }
                 },
                 "required": ["query"]
